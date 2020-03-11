@@ -11,6 +11,12 @@ class SchemaWidgetMixin:
     on_changed = Signal()
 
     VALID_COLOUR = '#ffffff'
+    try:
+        from aqt.theme import theme_manager
+        if theme_manager.get_night_mode():
+            VALID_COLOUR = theme_manager.str_color("frame-bg")
+    except:
+        pass 
     INVALID_COLOUR = '#f6989d'
 
     def __init__(self, schema: dict, ui_schema: dict, widget_builder: 'WidgetBuilder', **kwargs):
