@@ -4,7 +4,7 @@ from jsonschema.validators import validator_for
 
 from . import widgets
 from .defaults import compute_defaults
-
+from typing import Dict, Any
 
 def get_widget_state(schema, state=None):
     """A JSON object. Either the state given in input if any, otherwise
@@ -79,10 +79,17 @@ class WidgetBuilder:
 
     def create_widget(self, schema: dict, ui_schema: dict, state=None) -> widgets.SchemaWidgetMixin:
         schema_type = get_schema_type(schema)
+        widget_variant = self.get_widget_variant(schema_type, schema, ui_schema)
+        widget_cls = self.widget_map[schema_type][widget_variant]
+        widget = widget_cls(schema, ui_schema, self)
+        default_state = get_widget_state(schema, state)
+        if default_state is not None:
+            widget.state = default_state
+        return widget
 
+    def get_widget_variant(self, schema_type: str, schema: Dict[str, Any], ui_schema: Dict[str, Any]) -> str:
         try:
-            default_variant = self.widget_variant_modifiers[schema_type](
-                schema)
+            default_variant = self.widget_variant_modifiers[schema_type](schema)
         except KeyError:
             default_variant = self.default_widget_variants[schema_type]
 
@@ -92,11 +99,4 @@ class WidgetBuilder:
         widget_variant = schema.get('ui:widget')
         if widget_variant is None:
             widget_variant = ui_schema.get('ui:widget', default_variant)
-        widget_cls = self.widget_map[schema_type][widget_variant]
-
-        widget = widget_cls(schema, ui_schema, self)
-
-        default_state = get_widget_state(schema, state)
-        if default_state is not None:
-            widget.state = default_state
-        return widget
+        return widget_variant
